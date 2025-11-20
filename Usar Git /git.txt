@@ -1,0 +1,27 @@
+#Instalamos el cliente de github
+    sudo pacman -S git github-cli
+#Identidad
+    git config --global user.name "Tu Nombre de Usuario"
+    git config --global user.email "tu_email@ejemplo.com"
+#Verificar que la config sea correcta
+    git config --global --list
+#Autenticarse con GitHub CLI
+    gh auth login
+    HTTPS
+    Login in browser
+    Codigo de un solo Uso; ejemplo ABCD-1234
+#Vefificar el estado de autenticacion
+    gh auth status
+
+#Configurar el git en una carpeta
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/Mongtarget/Linux-Apuntes.git
+git push -u origin main
+
+#Para uno ya existente
+git remote add origin https://github.com/Mongtarget/Linux-Apuntes.git
+git branch -M main
+git push -u origin main
