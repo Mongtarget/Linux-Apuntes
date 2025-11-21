@@ -1,4 +1,84 @@
-Ubunun Server 24.04.3 LTS
+Hecho con el tutorial: https://youtu.be/BCVQqMnt8XE?si=eucivvG9qaDamEpK
+
+Ubuntu Server 24.04.3 LTS
 https://ubuntu.com/download/server
 
 #Instalacion Config
+Español
+Teclado latin
+
+#Opciones
+(x) Ubuntu Server
+(x) Search for third-party drivers
+
+#Network Configuration
+DHCPv4: 192.160.122.201/24
+
+#Mirror address
+De estados unidos : http://archive.ubuntu.com/ubuntu/
+
+#Guided storage Configuration
+(X)Use an entire disk
+(X)Set up disk as an LVM group
+
+#REsumen del Sistema de Archivos
+
+/               18.472G     new ext4    new LVM logical volume
+/boot            2.000G     new ext4    new partition of disco logical
+/boot/efi        1.049G     new fat32   new partition of disco logical
+
+#SSH
+(x) Instalacion de SSH
+
+
+
+#Verificar si existe actualizacion
+    sudo snap refresh       # Para la paqueteria snap
+    sudo apt update         # Para los indices o catalogo lista de paquetes
+    sudo apt dist-upgrade   # Para la distribucion
+
+#Swap
+    free -h     #Verificar Swap
+
+#SSH
+    sudo dpkg -l openssh-server     # Verificar si esta instalado
+    hostname -I                     # Ver nuestra IP
+    ssh "Insertar IP"               # En el otro computador conectarnos
+# Igresar
+
+
+#Hecho con el tutorial : https://www.youtube.com/watch?v=y7esIzzkzSE
+
+# Samba
+    sudo apt install samba          #Instalar Samba
+    mkdir share                     #Crear carpeta especifica para compartir
+    /home/adrian/share              #Carpeta de Guardado
+    sudo nano /etc/samba/smb.conf   #Crear carpeta de configuracion
+
+# En el archivo de configuracion poner al final este comando para tener un recurso compartido
+
+[share]
+   comment = Samba on UBuntu
+   path = /home/adrian/share
+   browseable = yes
+   read only = no
+
+# Iniciar el servicio de Samba en la carpeta Share
+    sudo service smbd start         #Inicar cada que se prenda el computador
+
+# Crear Usuario en Samba
+    sudo smbpasswd -a tu_usuario    # Reemplaza "tu_usuario" con tu usuario actual y pon una contraseña
+
+#Reiniciar Servicio
+    sudo systemctl restart smbd
+
+# Instalar smbclient en caso de futuros diagnosticos
+    sudo apt install smbclient
+
+# Dar permisos a la carpeta si es que eres usurio linux si no es el caso consulta el tutorial
+    sudo chown -R adrian:adrian /home/adrian/share      # 1. Asegura que adrian sea el dueño
+    sudo chmod -R 755 /home/adrian/share                # 2. Asegura que el dueño pueda leer y escribir
+
+# Acceder mediante el sistema de archivos de linux
+    smb://192.168.122.201/share                     # Para accder mediante la busqueda del sistema de archivos parte grafica
+    smbclient //192.168.122.201/share -U adrian     # Para acceder mediante la terminal
