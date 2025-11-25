@@ -1,0 +1,7 @@
+# Gestor de maquinas virtuales
+
+# Iniciar el servicio (el interruptor)
+sudo systemctl enable --now libvirtd
+
+# Darte permisos (obligatorio reiniciar PC después)
+sudo usermod -aG libvirt $USER
