@@ -53,7 +53,7 @@ De estados unidos : http://archive.ubuntu.com/ubuntu/
     sudo apt install samba          #Instalar Samba
     mkdir share                     #Crear carpeta especifica para compartir
     /home/adrian/share              #Carpeta de Guardado
-    sudo nano /etc/samba/smb.conf   #Crear carpeta de configuracion
+    sudo nano /etc/samba/smb.conf   #Configurar el archivo config
 
 # En el archivo de configuracion poner al final este comando para tener un recurso compartido
 
@@ -69,6 +69,9 @@ De estados unidos : http://archive.ubuntu.com/ubuntu/
 # Crear Usuario en Samba
     sudo smbpasswd -a tu_usuario    # Reemplaza "tu_usuario" con tu usuario actual y pon una contraseña
 
+#Saber si el usuario esta activo
+    sudo smbpasswd -e adrian
+
 #Reiniciar Servicio
     sudo systemctl restart smbd
 
@@ -82,3 +85,142 @@ De estados unidos : http://archive.ubuntu.com/ubuntu/
 # Acceder mediante el sistema de archivos de linux
     smb://192.168.122.201/share                     # Para accder mediante la busqueda del sistema de archivos parte grafica
     smbclient //192.168.122.201/share -U adrian     # Para acceder mediante la terminal
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+
+#HACER LA IP FIJA
+
+man netplan                                                                     # consultar ayuda
+ls -la /etc/netplan                                                             # Par comporbar si esta el archivo yaml
+sudo cp /etc/netplan/50-cloud-init.yaml /etc/netplan/50-cloud-init.yaml.bck     # Hacer una copia de seguridad en caso de tener problemas
+ip a                                                                            # buscar ip actual
+192.168.122.201/24
+sudo nano /etc/netplan/50-cloud-init.yaml                                       # Editar Archivo
+
+
+# Agregar esto a todo el archivo
+network:
+  version: 2
+  ethernets:
+    enp1s0:
+      dhcp4: no              # <--- CAMBIO IMPORTANTE: de true a no
+      addresses:
+        - 192.168.122.201/24  # Tu IP fija
+      routes:
+        - to: default
+          via: 192.168.122.1  # Tu puerta de enlace importante cambiar lo ultimo a 1
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1]
+
+# Aplicarlo
+sudo netplan try
+# Para ver si funciona
+ip a show enp1s0            #Deveria aparecer la palabra forever
+
+#configuracion en Cachy os para que reconozca el servidor sin necesidad de poner la ip fija (opcional solo para sistema linux)
+
+sudo nano /etc/hosts                        # Editar archivo
+192.168.122.201   andinaserver              # Poner en el ultimo esto
+
+--------------------------------------------------------------------------------------------------------------------------------
+#Agregar usuario a ubuntu server
+sudo adduser invitado               # Agregar usuario
+sudo usermod -aG sudo invitado      # Dar permisos de administracion
+su - leonel                         # Ver si funciono
+
+#Acceso a Samba
+sudo chmod o+x /home/adrian             # Desde la principal ponte esto para dar acceso a cualquiera de atravesarla para ver solamente Share
+sudo chmod 777 /home/adrian/share       # Asegurarse que tenga permisos
+smbclient //localhost/share -U leonel   # Verificar si funciona mediante la terminal
+
+----------------------------------------------------------------------------------------------------------------------------------
+#WORKGROUP para que lo reconozca windows y linux sin muucho problema
+
+sudo nano /etc/samba/smb.conf           #Entrar para configurar
+
+#La configuracion al final
+
+[global]
+   # Usamos WORKGROUP porque es el estándar de Windows para redes sin dominio.
+   workgroup = WORKGROUP
+   server string = AndinaServer (Ubuntu)
+
+   # --- SEGURIDAD ---
+   security = user
+   map to guest = Bad User
+   dns proxy = no
+
+# --- TU CARPETA COMPARTIDA (Integrando tus permisos) ---
+[share]
+   comment = Samba Share
+   path = /home/adrian/share
+   browseable = yes
+   read only = no
+   # Importante: Esto permite que 'leonel' entre, pero 'adrian' siga siendo el dueño.
+   valid users = adrian leonel
+   force user = adrian
+
+   # Máscaras para que los archivos no queden bloqueados
+   create mask = 0664
+   directory mask = 0775
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+
+#Configuraciones extras para pc anfitrion (Cachy os)
+nmcli connection show       # Ver el nombre de la conexión
+ip route | grep default     # Ver la puerta de enlace
+
+#Hacer la ip fija
+    # 1. Configurar la IP fija y la máscara (/24)
+    sudo nmcli connection modify "HONOR X7c" ipv4.addresses 10.52.237.126/24
+
+    # 2. Configurar la Puerta de Enlace (El dato clave que sacamos del ip route)
+    sudo nmcli connection modify "HONOR X7c" ipv4.gateway 10.52.237.12
+
+    # 3. Configurar los DNS (Para navegar rápido)
+    sudo nmcli connection modify "HONOR X7c" ipv4.dns "8.8.8.8,1.1.1.1"
+
+    # 4. Activar el modo Manual (Para que no pida otra IP nunca más)
+    sudo nmcli connection modify "HONOR X7c" ipv4.method manual
+
+    # 5. Aplicar cambios (Reiniciando la conexión)
+    sudo nmcli connection up "HONOR X7c"
+
+# Para refrescar -------------------------------------------
+    # Limpieza preventiva
+    sudo iptables -F
+    sudo iptables -t nat -F
+
+    # Habilitar reenvío
+    echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+
+    # Regla de entrada (NAT) - Todo lo que llegue a tu IP .126 va a la VM
+    sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 445 -j DNAT --to-destination 192.168.122.201:445
+
+    # Permiso de paso
+    sudo iptables -A FORWARD -p tcp -d 192.168.122.201 --dport 445 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+
+    # Salida correcta (Masquerade)
+    sudo iptables -t nat -A POSTROUTING -j MASQUERADE
+
+#REINCIAR LA COMPUTADORA----------------------------------------------
+
+# Restaurar acceso a windows
+
+    # Habilitar reenvío
+    echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+
+    # Regla de desvío (Todo lo que llegue a tu IP .126 va a la VM)
+    sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 445 -j DNAT --to-destination 192.168.122.201:445
+
+    # Permiso de paso
+    sudo iptables -A FORWARD -p tcp -d 192.168.122.201 --dport 445 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+
+    # Salida correcta (Masquerade)
+    sudo iptables -t nat -A POSTROUTING -j MASQUERADE
+
+# Guardar Configuraciones
+    sudo bash -c "iptables-save > /etc/iptables/iptables.rules"     #Guardar reglas actuales
+    sudo systemctl enable --now iptables                            # Activar el servicio de "Memoria"
