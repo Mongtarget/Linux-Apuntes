@@ -1,7 +1,16 @@
 # Gestor de maquinas virtuales
 
-# Iniciar el servicio (el interruptor)
-sudo systemctl enable --now libvirtd
+sudo pacman -S virt-manager
+sudo pacman -S qemu-full libvirt iptables-nft dnsmasq
 
-# Darte permisos (obligatorio reiniciar PC después)
-sudo usermod -aG libvirt $USER
+#orregir conflicto con firewall
+sudo nano /etc/libvirt/network.conf
+firewall_backend = "iptables"
+
+#Configurar la red para inicio automático
+sudo virsh net-autostart default
+
+#Reinciar Red
+sudo virsh net-destroy default
+sudo virsh net-start default
+sudo systemctl restart libvirtd
