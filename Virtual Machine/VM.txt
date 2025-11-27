@@ -1,16 +1,50 @@
 # Gestor de maquinas virtuales
 
-sudo pacman -S virt-manager
-sudo pacman -S qemu-full libvirt iptables-nft dnsmasq
+# sacado de https://www.youtube.com/watch?v=KsN1fjP1pXA para cachy OS
 
-#orregir conflicto con firewall
-sudo nano /etc/libvirt/network.conf
-firewall_backend = "iptables"
+'''
+Virt-Manager:
+sudo pacman -Syu --needed virt-manager qemu-desktop libvirt edk2-ovmf dnsmasq vde2 bridge-utils openbsd-netcat iptables-nft libguestfs dmidecode virt-viewer
 
-#Configurar la red para inicio automático
+sudo systemctl enable --now libvirtd.service
+
+sudo systemctl start libvirtd.service
+
 sudo virsh net-autostart default
 
-#Reinciar Red
-sudo virsh net-destroy default
-sudo virsh net-start default
+sudo nano /etc/libvirt/libvirtd.conf
+
+uncomment
+
+unix_sock_group = 'libvirt'
+
+unix_sock_rw_perms = '0770'
+
+sudo usermod -a -G libvirt $(whoami)
+
+sudo nano /etc/libvirt/qemu.conf
+uncomment
+user = "your user name"
+group = "your user name"
+
+sudo nano /etc/libvirt/network.conf
+firewall_backend = "iptables"
 sudo systemctl restart libvirtd
+'''
+# En caso de requerir el chip TPM 2
+
+sudo pacman -S swtpm
+sudo systemctl restart libvirt
+
+# Docker y Winboat
+
+'''
+sudo pacman -S docker docker-compose
+paru freerdp (check if it's installed
+sudo systemctl start docker
+sudo systemctl enable --now docker
+sudo docker run hello-world
+sudo usermod -aG docker $USER
+sudo pacman -S winboat
+reboot
+'''
