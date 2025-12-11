@@ -1,5 +1,5 @@
 #!/bin/bash
 
-read -p "Pendejo:" mau
+read -p "Nombre:" mau
 
-echo "$mau"
+echo "$mau eres un pendejo"
