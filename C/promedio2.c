@@ -24,8 +24,15 @@ int main() {
     }
 
     // 4. EL CÁLCULO FINAL: Fuera del bucle (cuando ya sumamos todo)
+
     promedio = suma / 5;
 
+    if (promedio > 20) {
+        printf("Caro");
+}
+    else {
+        printf("Barato");
+}
     printf("-----------------------------\n");
     printf("La suma total es: %.2f\n", suma);
     printf("El promedio final es: %.2f\n", promedio);
